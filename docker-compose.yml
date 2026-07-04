@@ -1,0 +1,11 @@
+services:
+  web:
+    image: ${WEB_IMAGE:-ghcr.io/chrisyerga/vortyx:latest}
+    container_name: vortyx-web
+    restart: unless-stopped
+    networks:
+      - porch
+
+networks:
+  porch:
+    external: true

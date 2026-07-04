@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+:root {
+  /* Per-site accent; overridden inline on <html> by SiteLayout from Convex theme data. */
+  --site-accent: #6d28d9;
+  --site-accent-dark: #4c1d95;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Admin form controls (dark admin chrome) */
+.admin-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(255 255 255 / 0.15);
+  background: rgb(0 0 0 / 0.3);
+  padding: 0.5rem 0.75rem;
+  color: inherit;
+}
+
+.admin-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+/* Rendered markdown article body */
+.prose-vortyx {
+  line-height: 1.75;
+  color: var(--color-slate-700);
+}
+
+.prose-vortyx h2 {
+  margin: 2rem 0 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-slate-900);
+}
+
+.prose-vortyx h3 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-slate-900);
+}
+
+.prose-vortyx p {
+  margin: 1rem 0;
+}
+
+.prose-vortyx ul,
+.prose-vortyx ol {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.prose-vortyx ul {
+  list-style: disc;
+}
+
+.prose-vortyx ol {
+  list-style: decimal;
+}
+
+.prose-vortyx li {
+  margin: 0.35rem 0;
+}
+
+.prose-vortyx a {
+  color: var(--site-accent);
+  text-decoration: underline;
+}
+
+.prose-vortyx blockquote {
+  margin: 1.25rem 0;
+  border-left: 3px solid var(--site-accent);
+  padding-left: 1rem;
+  color: var(--color-slate-500);
+}
+
+.prose-vortyx code {
+  background: var(--color-slate-100);
+  border-radius: 0.25rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.9em;
+}
+
+.prose-vortyx pre {
+  margin: 1.25rem 0;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: var(--color-slate-900);
+  padding: 1rem;
+}
+
+.prose-vortyx pre code {
+  background: transparent;
+  padding: 0;
+  color: var(--color-slate-100);
+}

@@ -1,0 +1,78 @@
+---
+import SiteLayout from "../../../layouts/SiteLayout.astro";
+import { getEnabledSites, type SiteRecord } from "../../../lib/sitesData";
+import { getSitePosts } from "../../../lib/content";
+import { siteHref } from "../../../lib/siteHref";
+
+export async function getStaticPaths() {
+  const sites = await getEnabledSites();
+  return sites.map((site) => ({
+    params: { site: site.key },
+    props: { site },
+  }));
+}
+
+interface Props {
+  site: SiteRecord;
+}
+
+const { site } = Astro.props;
+const posts = await getSitePosts(site.key);
+
+const dateFormat = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+---
+
+<SiteLayout
+  site={site}
+  title={`${site.name} — ${site.topic}`}
+  description={site.seo.metaDescription}
+  path="/"
+>
+  <main class="mx-auto max-w-3xl px-6">
+    <section class="py-14 text-center">
+      {site.theme.heroEmoji && <p class="mb-4 text-5xl">{site.theme.heroEmoji}</p>}
+      <h1 class="text-4xl font-bold tracking-tight">{site.name}</h1>
+      <p class="mx-auto mt-4 max-w-xl text-lg text-slate-600">
+        {site.description}
+      </p>
+    </section>
+
+    <section aria-labelledby="latest-heading">
+      <h2
+        id="latest-heading"
+        class="mb-6 border-b border-slate-200 pb-2 text-sm font-semibold uppercase tracking-widest text-slate-500"
+      >
+        Latest articles
+      </h2>
+      {posts.length === 0 && (
+        <p class="text-slate-500">No articles yet — check back soon.</p>
+      )}
+      <ul class="space-y-8">
+        {posts.map((post) => (
+          <li>
+            <article>
+              <h3 class="text-xl font-semibold">
+                <a
+                  href={siteHref(site.key, `/${post.slug}/`)}
+                  class="hover:text-(--site-accent)"
+                >
+                  {post.title}
+                </a>
+              </h3>
+              <p class="mt-1 text-sm text-slate-400">
+                <time datetime={post.pubDate.toISOString()}>
+                  {dateFormat.format(post.pubDate)}
+                </time>
+              </p>
+              <p class="mt-2 text-slate-600">{post.excerpt}</p>
+            </article>
+          </li>
+        ))}
+      </ul>
+    </section>
+  </main>
+</SiteLayout>

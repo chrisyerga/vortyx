@@ -1,0 +1,111 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [content-publish]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+# Coalesce rapid publish bursts: at most one queued run behind the active one.
+# Running deploys are never canceled (a half-applied porch register would be worse).
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  convex:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx convex deploy --yes
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    # The Astro build queries Convex (sites + posts), so schema/function
+    # changes must land first.
+    needs: convex
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+        env:
+          PUBLIC_CONVEX_URL: ${{ secrets.PUBLIC_CONVEX_URL }}
+
+      - id: domains
+        name: Resolve domain list from Convex
+        run: echo "domains=$(node scripts/list-domains.mjs)" >> "$GITHUB_OUTPUT"
+        env:
+          PUBLIC_CONVEX_URL: ${{ secrets.PUBLIC_CONVEX_URL }}
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            PUBLIC_CONVEX_URL=${{ secrets.PUBLIC_CONVEX_URL }}
+          tags: |
+            ghcr.io/chrisyerga/vortyx:${{ github.sha }}
+            ghcr.io/chrisyerga/vortyx:latest
+
+      - uses: appleboy/ssh-action@v1.2.0
+        env:
+          DOMAINS: ${{ steps.domains.outputs.domains }}
+        with:
+          host: ${{ secrets.PORCH_HOST }}
+          username: ${{ secrets.PORCH_USER }}
+          key: ${{ secrets.PORCH_SSH_KEY }}
+          envs: DOMAINS
+          script: |
+            bash -lc '
+              set -e
+              [ -f "$HOME/.bashrc" ] && PS1=porch-ci . "$HOME/.bashrc"
+              set -u
+
+              export NVM_DIR="$HOME/.nvm"
+              [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+              : "${DIGITALOCEAN_TOKEN:?DIGITALOCEAN_TOKEN must be available to Porch}"
+              : "${DOMAINS:?DOMAINS must be provided by the workflow}"
+
+              # $DOMAINS is deliberately unquoted: porch takes a variadic
+              # --domain list and the first domain (vortyx.dev) is canonical.
+              npx --yes @lindale/porch service register \
+                --service-id vortyx \
+                --domain $DOMAINS \
+                --container vortyx-web \
+                --port 80 \
+                --www-redirect \
+                --image ghcr.io/chrisyerga/vortyx:${{ github.sha }} \
+                --deploy-path /opt/vortyx \
+                --json
+
+              cd /opt/porch
+              docker compose restart caddy
+            '

@@ -1,0 +1,69 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import { siteHref, siteAbsoluteUrl } from "../lib/siteHref";
+import type { SiteRecord } from "../lib/sitesData";
+
+interface Props {
+  site: SiteRecord;
+  title: string;
+  description: string;
+  path: string; // subdomain-root-relative, e.g. "/" or "/my-post/"
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImageUrl?: string;
+  ogType?: string;
+}
+
+const {
+  site,
+  title,
+  description,
+  path,
+  ogTitle,
+  ogDescription,
+  ogImageUrl,
+  ogType,
+} = Astro.props;
+
+const canonicalUrl = siteAbsoluteUrl(site.key, path);
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonicalUrl={canonicalUrl}
+  ogTitle={ogTitle}
+  ogDescription={ogDescription}
+  ogImageUrl={ogImageUrl ?? site.seo.ogImageUrl}
+  ogType={ogType}
+  accentColor={site.theme.accentColor}
+>
+  <header class="border-b border-slate-200">
+    <div class="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
+      <a
+        href={siteHref(site.key, "/")}
+        class="flex items-center gap-2 text-lg font-bold text-(--site-accent)"
+      >
+        {site.theme.heroEmoji && <span>{site.theme.heroEmoji}</span>}
+        <span>{site.name}</span>
+      </a>
+      <a
+        href="https://vortyx.dev/"
+        class="text-xs text-slate-400 hover:text-slate-600"
+      >
+        a vortyx site
+      </a>
+    </div>
+  </header>
+
+  <slot />
+
+  <footer class="mt-16 border-t border-slate-200">
+    <div class="mx-auto max-w-3xl px-6 py-8 text-sm text-slate-500">
+      <p>
+        © {new Date().getFullYear()} {site.name} — part of the
+        <a href="https://vortyx.dev/" class="underline">Vortyx</a> network.
+      </p>
+    </div>
+  </footer>
+</BaseLayout>

@@ -1,0 +1,8 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { AdminApp } from "../../components/AdminApp";
+---
+
+<AdminLayout title="Posts">
+  <AdminApp client:only="react" section="posts" />
+</AdminLayout>

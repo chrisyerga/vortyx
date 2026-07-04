@@ -1,0 +1,46 @@
+# App-container Caddy. Runs behind the Porch edge Caddy, which terminates TLS
+# for all registered domains and proxies plaintext HTTP here on :80 while
+# preserving the original Host header.
+#
+# One static build serves every host: the main site lives at the dist root and
+# each content site is built under /sites/<key>/. A single generic rule maps
+# any subdomain host onto its build prefix, so adding a site requires no
+# Caddyfile change — only PORCH domain registration (handled by the deploy
+# workflow) and a rebuild.
+{
+	admin off
+	# TLS is handled by the Porch edge proxy; serve plain HTTP internally.
+	auto_https off
+}
+
+:80 {
+	root * /srv
+	encode gzip zstd
+
+	# www → apex (redir runs before rewrite in Caddy's directive order,
+	# so this wins over the subdomain rewrite below).
+	@www host www.vortyx.dev
+	redir @www https://vortyx.dev{uri} permanent
+
+	# Any other subdomain maps to its build prefix. Shared root assets
+	# (/_astro/*, favicon, robots) are emitted root-absolute by Astro and
+	# served identically to every host, so they bypass the rewrite.
+	@sitePage {
+		header_regexp sub Host ^([a-z0-9-]+)\.vortyx\.dev$
+		not path /_astro/* /favicon.svg /favicon.ico /robots.txt
+	}
+	rewrite @sitePage /sites/{re.sub.1}{uri}
+
+	# vortyx.dev (including /admin) falls through with no rewrite.
+	file_server
+
+	# Custom 404 page with a proper 404 status code. Unknown subdomains land
+	# here too (their rewrite target has no files).
+	handle_errors {
+		@notfound expression {http.error.status_code} == 404
+		handle @notfound {
+			rewrite * /404.html
+			file_server
+		}
+	}
+}

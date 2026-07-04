@@ -1,0 +1,90 @@
+---
+import { render } from "astro:content";
+import SiteLayout from "../../../layouts/SiteLayout.astro";
+import { getEnabledSites, type SiteRecord } from "../../../lib/sitesData";
+import { getSitePosts, type SitePost } from "../../../lib/content";
+import { siteHref } from "../../../lib/siteHref";
+
+export async function getStaticPaths() {
+  const sites = await getEnabledSites();
+  const paths = [];
+  for (const site of sites) {
+    const posts = await getSitePosts(site.key);
+    for (const post of posts) {
+      paths.push({
+        params: { site: site.key, slug: post.slug },
+        props: { site, post },
+      });
+    }
+  }
+  return paths;
+}
+
+interface Props {
+  site: SiteRecord;
+  post: SitePost;
+}
+
+const { site, post } = Astro.props;
+const { Content } = await render(post.entry);
+
+const dateFormat = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+---
+
+<SiteLayout
+  site={site}
+  title={`${post.title} — ${site.name}`}
+  description={post.metaDescription}
+  path={`/${post.slug}/`}
+  ogTitle={post.ogTitle ?? post.title}
+  ogDescription={post.ogDescription ?? post.metaDescription}
+  ogImageUrl={post.ogImageUrl}
+  ogType="article"
+>
+  <main class="mx-auto max-w-3xl px-6 py-12">
+    <article>
+      <header class="mb-8">
+        <h1 class="text-3xl font-bold tracking-tight">{post.title}</h1>
+        <p class="mt-2 text-sm text-slate-400">
+          <time datetime={post.pubDate.toISOString()}>
+            {dateFormat.format(post.pubDate)}
+          </time>
+          {post.updatedDate && (
+            <span>
+              {" · updated "}
+              <time datetime={post.updatedDate.toISOString()}>
+                {dateFormat.format(post.updatedDate)}
+              </time>
+            </span>
+          )}
+        </p>
+        {post.tags.length > 0 && (
+          <ul class="mt-3 flex flex-wrap gap-2">
+            {post.tags.map((tag) => (
+              <li class="rounded-full bg-slate-100 px-3 py-0.5 text-xs text-slate-600">
+                {tag}
+              </li>
+            ))}
+          </ul>
+        )}
+      </header>
+
+      <div class="prose-vortyx">
+        <Content />
+      </div>
+    </article>
+
+    <p class="mt-12">
+      <a
+        href={siteHref(site.key, "/")}
+        class="text-sm font-medium text-(--site-accent) hover:underline"
+      >
+        ← All articles
+      </a>
+    </p>
+  </main>
+</SiteLayout>

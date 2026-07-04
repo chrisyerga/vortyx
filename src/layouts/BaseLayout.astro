@@ -1,0 +1,52 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+  canonicalUrl?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImageUrl?: string;
+  ogType?: string;
+  noindex?: boolean;
+  accentColor?: string;
+}
+
+const {
+  title,
+  description,
+  canonicalUrl,
+  ogTitle,
+  ogDescription,
+  ogImageUrl,
+  ogType = "website",
+  noindex = false,
+  accentColor,
+} = Astro.props;
+---
+
+<!doctype html>
+<html
+  lang="en"
+  style={accentColor ? `--site-accent: ${accentColor}` : undefined}
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta property="og:title" content={ogTitle ?? title} />
+    <meta property="og:description" content={ogDescription ?? description} />
+    <meta property="og:type" content={ogType} />
+    {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+    {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <slot name="head" />
+  </head>
+  <body class="min-h-screen bg-white text-slate-900">
+    <slot />
+  </body>
+</html>
