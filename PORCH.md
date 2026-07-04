@@ -1,6 +1,6 @@
 # PORCH deployment — vortyx
 
-Deployed to the shared VPS (droplet `zoey.lindale.tech`, SSH alias `milo`) via
+Deployed to the shared VPS (droplet `milo.newtricks.ai`, SSH alias `milo`) via
 [Porch](https://github.com/chrisyerga/porch) (`@lindale/porch`), behind the
 shared Caddy edge.
 
