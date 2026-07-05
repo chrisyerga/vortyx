@@ -49,3 +49,31 @@ Convex agent skills for common tasks can be installed by running
 `npx convex ai-files install`.
 
 <!-- convex-ai-end -->
+
+## Cursor Cloud specific instructions
+
+The update script runs `npm install` on startup. The Convex backend binary and
+agent skills are downloaded lazily on the first `npx convex dev` run (not by the
+update script). Standard dev commands live in `package.json` and the **Local
+dev** section above. Non-obvious caveats for this environment:
+
+- **Run Convex in anonymous agent mode.** Cloud agents have no Convex login, so
+  start the backend with `CONVEX_AGENT_MODE=anonymous npx convex dev` (long-running;
+  provisions a local deployment at `http://127.0.0.1:3210`). Prefix the same env
+  var on any one-shot Convex CLI call: `convex run`, `convex env set`, etc.
+- **Add `PUBLIC_CONVEX_URL` to `.env.local` yourself.** The anonymous deployment
+  only writes `CONVEX_URL`/`CONVEX_SITE_URL`/`CONVEX_DEPLOYMENT`, but Astro reads
+  `PUBLIC_CONVEX_URL`. After the first `convex dev`, append
+  `PUBLIC_CONVEX_URL=http://127.0.0.1:3210` to `.env.local` or the site builds
+  with no data and the admin/browser client throws "PUBLIC_CONVEX_URL is not set".
+  `.env.local` is gitignored, so redo this each fresh VM.
+- **Admin login:** set a password on the deployment with
+  `CONVEX_AGENT_MODE=anonymous npx convex env set ADMIN_PASSWORD <pw>`, then log in
+  at `/admin/`. Seed demo data first with `npm run seed` (idempotent).
+- **`deploy: failed` is expected locally.** Creating/enabling a site or publishing
+  a post fires `convex/deploy.ts:triggerSiteDeploy` (a GitHub `repository_dispatch`).
+  Without `GITHUB_DEPLOY_TOKEN` set on the deployment it fails gracefully — the data
+  still persists in Convex and the admin panel updates reactively.
+- **Public `/sites/<key>/` pages are static, built from Convex at build time.**
+  New content created in `/admin` will NOT appear on the public pages until you
+  re-run `npm run build` (or restart `npm run dev`, which re-fetches on content sync).
